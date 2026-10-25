@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* Colors follow the mobile app (lib/core/constants/app_colors.dart): black scaffold,
+   #272727 containers, #BFBFBF gray, #545454 icon backgrounds, red #E50202 as the accent.
+   Layout and type still follow the dashboard Figma file (UQlzKl97SmHWyuZIIV5dVI).
+   White is only for text and icons, plus the text on red buttons. */
+@theme {
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --color-chrome: #000000; /* top bar, sidebar (primaryBlack) */
+  --color-canvas: #000000; /* content area (primaryBlack) */
+  --color-surface: #272727; /* cards, stat cards (containerBgColor) */
+  --color-table: #1a1a1a;
+  --color-nav-active: #272727; /* active nav item (containerBgColor) */
+  --color-field: #1a1a1a; /* input fill */
+
+  --color-brand: #e50202; /* accent (red) */
+  --color-brand-hover: #ff1a1a;
+  --color-brand-fg: #ff4d4d; /* readable red for small text on dark */
+  --color-on-brand: #ffffff; /* text and icons on red (about 4.8:1) */
+
+  --color-line: #545454; /* border/subtle */
+  --color-line-input: #707070; /* border/input */
+  --color-line-strong: #bfbfbf; /* border/default */
+
+  --color-fg: #ffffff; /* text/primary, text/on-chrome */
+  --color-fg-2: #d3d3d3; /* text/secondary */
+  --color-muted: #bfbfbf; /* text/muted */
+  --color-subtle: #707070; /* text/subtle */
+
+  --color-success: #039b06; /* successGreen */
+  --color-success-fg: #22b525; /* readable green for small text on #272727 */
+  --color-danger: #e50202;
+  --color-danger-fg: #ff6b6b; /* readable red for small text on dark */
+  --color-warning: #ffb300;
+  --color-premium: #ffc93c;
+  --color-info: #4c8dff;
+  --color-view: #9ec7dc; /* "View" buttons in user tables */
+
+  /* Chart series (validated for the #272727 surface with the dataviz validator) */
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+
+  --shadow-modal: 0 16px 48px #00000073;
+
+  /* Compact admin type scale: one step smaller than Tailwind's default (base is 14px). */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.125rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.25rem;
+  --text-2xl--line-height: 1.35;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Native date/time picker icon is dark by default; lighten it to match. */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
+
+@keyframes shimmer {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton {
+  animation: shimmer 1.4s ease-in-out infinite;
+}
