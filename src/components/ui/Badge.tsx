@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
-import { PLAN_LABEL, STATUS_LABEL } from "@/lib/format";
-import type { AnnouncementType, Plan, SubscriptionStatus } from "@/types/api";
+import { PLAN_LABEL, STATUS_LABEL, SUBSCRIPTION_HISTORY_LABEL } from "@/lib/format";
+import type { AnnouncementType, Plan, SubscriptionHistoryStatus, SubscriptionStatus } from "@/types/api";
 import type { AnnouncementState } from "@/api/announcements";
 
 export type Tone = "neutral" | "info" | "success" | "warning" | "premium" | "danger";
@@ -46,6 +46,17 @@ const STATUS_TONE: Record<SubscriptionStatus, Tone> = {
 
 export function StatusBadge({ status }: { status: SubscriptionStatus }) {
   return <Badge tone={STATUS_TONE[status] ?? "neutral"}>{STATUS_LABEL[status] ?? status}</Badge>;
+}
+
+const HISTORY_TONE: Record<SubscriptionHistoryStatus, Tone> = {
+  active: "success",
+  canceled: "danger",
+  expired: "neutral",
+  refunded: "warning",
+};
+
+export function SubscriptionHistoryBadge({ status }: { status: SubscriptionHistoryStatus }) {
+  return <Badge tone={HISTORY_TONE[status] ?? "neutral"}>{SUBSCRIPTION_HISTORY_LABEL[status] ?? status}</Badge>;
 }
 
 export const ANNOUNCEMENT_TYPE: Record<AnnouncementType, { label: string; tone: Tone }> = {

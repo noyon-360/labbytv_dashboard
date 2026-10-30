@@ -165,6 +165,8 @@ The Figma Forgot Password screen shows the email already masked, so add an email
 | `GET /admin/user/:id` | One user |
 | `PUT /admin/user/:id` | Writes `req.body` straight to the document with no whitelist. **Only ever send an explicit allowlist of fields** (for example `name`, `plan`, `subscriptionStatus`). **Never send `password`**: it would be saved unhashed. |
 | `DELETE /admin/user/:id` | Hard delete. It does **not** remove the user's playlists, history or avatar (unlike the user's own delete-account). Confirm dialog required. |
+| `GET /admin/user/:id/watch-history` | `?page&limit` (default 20, max 100). `data: { history, pagination: { currentPage, totalPages, totalItems } }`. One row per title, updated in place, so it isn't a session log. No genre. |
+| `GET /admin/user/:id/subscription-history` | `data: [...]`, no paging. Store purchases only: admin grants aren't recorded, and `platform` is only `apple` or `google`. |
 
 User fields useful to the dashboard: `_id, name, email, phone, country, city, avatar.url, role ("user" or "admin"), plan ("free", "basic" or "premium"), subscriptionStatus ("none", "active", "canceled", "past_due" or "trialing"), subscriptionPlatform ("none", "apple" or "google"), subscriptionProductId, subscriptionStartDate, subscriptionExpiresAt, createdAt, updatedAt, fcmTokens[].platform`.
 
@@ -184,7 +186,6 @@ User fields useful to the dashboard: `_id, name, email, phone, country, city, av
 - **Stats:** there's no stats endpoint. Totals and growth must be computed client-side from `/admin/users`.
 - **Most watched by genre:** not possible. Watch history stores no genre or category, and there's no admin access to watch history.
 - **Subscription plans:** there's no plan model. Plans are store products in RevenueCat, App Store and Play Store, so the Figma create/edit/delete with price and features has nothing to save to.
-- **Other users' subscription history or watch history:** no admin endpoints.
 
 ---
 
@@ -255,6 +256,7 @@ src/
 ### Phase 2: User Management (`158:1524`)
 - [x] Table with Name, Mail, Added date, Plan and View. Use client-side search (name/email), plan filter, sort by date and pagination (25 per page).
 - [x] User detail page (new design): profile, plan and subscription fields (status, platform, product, start/expiry), devices (count and platform of `fcmTokens`), joined date
+- [x] Subscription history and watch history on the detail page (`src/features/users/UserActivity.tsx`, added 2026-10-30, needs backend commit `c88caee`)
 - [x] Actions on detail: change plan/status (allowlisted `PUT` fields only) and delete (typed confirmation)
 - [x] Grant premium for a period (1/3/6 months, 1/2 years, end of year, custom date, or no end date), extend or revoke it (`src/lib/grants.ts`, added 2026-10-26). A grant sets `plan: "premium"`, `subscriptionStatus: "active"`, `subscriptionPlatform: "none"`, `subscriptionProductId: "admin_grant"` and the dates. The app's `PremiumService` and the backend's `isPremium` honour the expiry date, and the backend's daily expiry job sets the user back to free. Grants are blocked for users with a live App Store / Google Play subscription (the next renewal webhook would overwrite them). No audit trail of who granted what: that needs a backend change.
 
@@ -295,7 +297,7 @@ These need explicit approval before anyone touches the backend.
 | Real dashboard stats without loading every user | `GET /admin/stats` (totals, growth, plan and platform breakdown) |
 | Scalable user table | Paging, search and sort query params on `GET /admin/users` |
 | "Most watching" by genre | Store `categoryId`/genre in watch history, plus an aggregation endpoint |
-| Admin view of a user's activity | `GET /admin/user/:id/history`, `GET /admin/user/:id/subscriptions` |
+| Admin grants in subscription history | Write a `SubscriptionHistory` row for grants (also needs `platform` to allow them) |
 | Subscription plan CRUD as designed | Plan model + `/admin/plans` CRUD |
 
 ---
@@ -304,7 +306,7 @@ These need explicit approval before anyone touches the backend.
 
 Logged so they aren't forgotten. **Not** in scope for the dashboard.
 
-1. `route/admin.route.js` uses `protect` but not `isAdmin`, so any logged-in user can call the admin endpoints. `updateUser` also accepts any field.
+1. `updateUser` (`PUT /admin/user/:id`) accepts any field. (`isAdmin` was added to `route/admin.route.js` in backend commit `c88caee`.)
 2. The Apple webhook decodes JWS payloads without verifying the signature.
 3. Apple purchase verification falls back to the sandbox in production.
 4. `/server`, `/category` and `/search` have no auth and fetch any `serverUrl` the caller sends.
@@ -324,6 +326,5 @@ Found while building the dashboard (2026-10-25). The dashboard works around each
 10. `PUT /admin/user/:id` returns the updated document without the `-refreshToken` select, so the response includes the user's refresh token. The dashboard doesn't use the response.
 11. One refresh token per user (`user.refreshToken`). An admin who signs in to the dashboard invalidates their own mobile app refresh token and vice versa. If a non-admin tries the dashboard, their mobile session's refresh token is also rotated. The dashboard serializes refreshes across tabs to cope. Fix: a refresh token per session or device.
 12. `PUT /user/profile` ignores empty strings (`if (updates.country)`), so country and city can be changed but never cleared.
-13. Admin check is only on the client for `/admin/*` (see item 1). Until `isAdmin` is added there, the dashboard's role check is UX, not security.
 
 Mobile app theme notes (also deferred): Manrope isn't registered in `pubspec.yaml`, so it falls back to the system font; the scaffold uses `#000000` vs Figma's `#111111`; colors and text styles are mostly inline rather than coming from the theme.

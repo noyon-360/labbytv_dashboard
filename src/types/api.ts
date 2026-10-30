@@ -48,6 +48,43 @@ export type UserUpdate = Partial<
   >
 >;
 
+export type VideoType = "movie" | "series" | "live";
+
+/** One row per title: the backend updates it in place, so this is the latest state, not a session log. */
+export type WatchHistoryItem = {
+  _id: string;
+  videoId: string;
+  title: string;
+  videoType: VideoType;
+  thumbnail?: string;
+  seasonNumber?: number | null;
+  episodeNumber?: number | null;
+  currentTime: number;
+  duration: number;
+  progressPercentage: number;
+  isCompleted: boolean;
+  isLoved: boolean;
+  lastWatchedAt: string;
+};
+
+export type WatchHistoryPage = {
+  history: WatchHistoryItem[];
+  pagination: { currentPage: number; totalPages: number; totalItems: number };
+};
+
+export type SubscriptionHistoryStatus = "active" | "canceled" | "expired" | "refunded";
+
+export type SubscriptionHistoryItem = {
+  _id: string;
+  platform: Exclude<SubscriptionPlatform, "none">;
+  productId: string;
+  status: SubscriptionHistoryStatus;
+  transactionId?: string;
+  startDate?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+};
+
 export type AnnouncementType = "update" | "feature" | "maintenance" | "important" | "info";
 
 export type Announcement = {

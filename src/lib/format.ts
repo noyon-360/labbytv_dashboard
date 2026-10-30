@@ -1,4 +1,4 @@
-import type { Plan, SubscriptionPlatform, SubscriptionStatus, User } from "@/types/api";
+import type { Plan, SubscriptionHistoryStatus, SubscriptionPlatform, SubscriptionStatus, User, VideoType } from "@/types/api";
 
 const dateFmt = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -86,6 +86,19 @@ export const PLATFORM_LABEL: Record<SubscriptionPlatform, string> = {
   none: "—",
   apple: "Apple App Store",
   google: "Google Play",
+};
+
+export const SUBSCRIPTION_HISTORY_LABEL: Record<SubscriptionHistoryStatus, string> = {
+  active: "Active",
+  canceled: "Canceled",
+  expired: "Expired",
+  refunded: "Refunded",
+};
+
+export const VIDEO_TYPE_LABEL: Record<VideoType, string> = {
+  movie: "Movie",
+  series: "Series",
+  live: "Live",
 };
 
 const DEVICE_LABEL: Record<string, string> = {

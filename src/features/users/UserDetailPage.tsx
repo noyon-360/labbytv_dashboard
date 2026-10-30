@@ -7,7 +7,6 @@ import {
   Calendar,
   CircleUser,
   Crown,
-  Inbox,
   Mail,
   Phone,
   Smartphone,
@@ -34,6 +33,7 @@ import {
   STATUS_LABEL,
 } from "@/lib/format";
 import { hasLiveGrant, hasStoreSubscription, isAdminGrant } from "@/lib/grants";
+import { SubscriptionHistoryCard, WatchHistoryCard } from "./UserActivity";
 import { DeleteUserDialog, EditPlanDialog, GrantPremiumDialog, RevokePremiumDialog } from "./UserDialogs";
 
 export function UserDetailPage() {
@@ -194,13 +194,9 @@ export function UserDetailPage() {
             </dl>
           </Card>
 
-          <Card>
-            <CardTitle className="mb-3">Activity</CardTitle>
-            <p className="flex items-center gap-3 text-base text-fg-2">
-              <Inbox className="size-5 shrink-0" aria-hidden />
-              Watch history and subscription history aren&apos;t available from the API yet.
-            </p>
-          </Card>
+          <SubscriptionHistoryCard userId={user._id} />
+          {/* Keyed so the page number resets when moving to another user. */}
+          <WatchHistoryCard key={user._id} userId={user._id} />
         </div>
       </div>
 
