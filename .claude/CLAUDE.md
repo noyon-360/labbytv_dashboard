@@ -22,7 +22,7 @@ Web admin panel for **LABBY TV** (brand mark "LAB+"), an IPTV streaming app that
 - **Only change this repo (the dashboard).** Never edit, commit to, or run write commands in the backend or mobile app repos. Reading them to check API shapes is fine.
 - **If dashboard work needs a backend (or app) change, stop and tell the user first.** Describe what should change, where, and why, and add it to "Backend additions" or "Known backend issues" below. Do not make the change yourself; the user decides and does it.
 - **The backend and mobile app are in production and working.** Known backend issues are listed at the bottom for later; they are not part of the dashboard work.
-- The dashboard talks to the **production API** by default. Every write (update or delete user, announcements) hits real users, so destructive actions always go through a confirm dialog.
+- The dashboard talks to the **production API** by default. Every write (update or delete user) hits real users, so destructive actions always go through a confirm dialog.
 - Never read or print `.env` files or `secret/` in the backend.
 
 ---
@@ -44,7 +44,7 @@ Web admin panel for **LABBY TV** (brand mark "LAB+"), an IPTV streaming app that
 
 Use `get_design_context` / `get_screenshot` on these node IDs when building each screen. The mobile frames (375 wide) on the same page are the user app, not this project.
 
-**Not in Figma but needed** (design them in the same visual language): user detail (target of every "View" button), change password (linked from the avatar dropdown), announcements management, 404, and empty, loading and error states.
+**Not in Figma but needed** (design them in the same visual language): user detail (target of every "View" button), change password (linked from the avatar dropdown), 404, and empty, loading and error states.
 
 ### Dashboard Figma file (`UQlzKl97SmHWyuZIIV5dVI`)
 
@@ -69,8 +69,8 @@ The Figma connection uses the account nazibullah@student.primeasia.edu.bd. An ea
   - Edit Plan modal `8:172`
   - Delete User modal `8:289`
   - Change Password `10:211`
-  - Announcements `10:291`
-  - Create Announcement `10:460`
+  - Announcements `10:291` (removed from the app 2026-10-30, see Phase 5)
+  - Create Announcement `10:460` (removed from the app 2026-10-30)
   - Subscription Overview `11:421`
   - States `11:605` (empty, no results, error, loading, toasts, 404, not admin, session expired)
 
@@ -102,7 +102,7 @@ White is only for text and icons, plus text on red buttons. The dashboard Figma 
 ### Layout shell (shared by every logged-in page)
 
 - **Top bar:** dark (`bg/chrome`), 64px tall. Logo on the left; admin name, "Admin" role label, avatar and chevron on the right. The dropdown has the name and email header, then Personal Information, Change Password and Sign Out.
-- **Sidebar:** dark (`chrome`), 220px wide in the app (238 in the dashboard file, 204 in the original). Dashboard, User Management, Subscription, Announcements and Setting, with Logout pinned to the bottom. The active item is a `#272727` pill with white text and a red icon.
+- **Sidebar:** dark (`chrome`), 220px wide in the app (238 in the dashboard file, 204 in the original). Dashboard, User Management, Subscription and Setting, with Logout pinned to the bottom. The active item is a `#272727` pill with white text and a red icon.
 - **Content:** black `#000000` background. Page title is 24px SemiBold, with a 13px breadcrumb under it on inner pages.
 
 ### Sizing (decided 2026-10-26)
@@ -177,7 +177,9 @@ User fields useful to the dashboard: `_id, name, email, phone, country, city, av
 | `GET /user/profile` | Current admin |
 | `PUT /user/profile` | multipart: `name`, `country`, `city`, `avatar` (file, max 10MB, JPEG/PNG/WEBP/HEIC). There is a single `name` field, so the Figma first/last name fields are split for display and joined into `name` on save. Phone and email cannot be changed via the API, which matches the Figma edit screen. |
 
-### Announcements (admin API ready, no Figma screen)
+### Announcements (admin API exists, not used by the dashboard)
+
+The dashboard page was removed on 2026-10-30 (see Phase 5). The API is still live:
 
 `GET/POST /announcement/admin`, `PUT/DELETE /announcement/admin/:id`. Fields: `title` (max 120), `message` (max 1000), `type` (update, feature, maintenance, important or info), `actionLabel` (max 40), `actionUrl` (http(s) only), `priority` (number, higher shows first), `isActive`, `startsAt`, `endsAt`. The app shows up to 5 active announcements on Home, highest priority first.
 
@@ -222,16 +224,16 @@ Config: `NEXT_PUBLIC_API_BASE_URL` (defaults to production). Keep a `.env.exampl
 ```
 src/
   app/          routes only: (auth)/login|forgot-password|verify-otp|reset-password,
-                (app)/dashboard|users|users/[id]|subscription|announcements|announcements/new|
-                announcements/[id]/edit|settings|settings/edit|settings/password, not-found
-  api/          axios client (refresh, errors), auth, users, profile, announcements (TanStack Query hooks)
+                (app)/dashboard|users|users/[id]|subscription|settings|settings/edit|
+                settings/password, not-found
+  api/          axios client (refresh, errors), auth, users, profile (TanStack Query hooks)
   auth/         session (token store), AuthProvider/useAuth, RequireAdmin
   components/   ui/ (Button, Field, Badge, Card, Table, Modal, Toast, States, FilterTabs, Pagination,
-                StatCard, Switch, Avatar), charts/DonutChart
+                StatCard, Avatar), charts/DonutChart
   layout/       AppShell (top bar + mobile drawer), Sidebar, ProfileMenu, PageHeader, nav
-  features/     auth, dashboard, users, subscriptions, announcements, settings (one page component each)
+  features/     auth, dashboard, users, subscriptions, settings (one page component each)
   lib/          format (dates, labels, names), stats (computed from /admin/users), passwords, env
-  types/        API types (User, Announcement, ApiResponse<T>)
+  types/        API types (User, ApiResponse<T>)
 ```
 
 ---
@@ -255,7 +257,7 @@ src/
 
 ### Phase 2: User Management (`158:1524`)
 - [x] Table with Name, Mail, Added date, Plan and View. Use client-side search (name/email), plan filter, sort by date and pagination (25 per page).
-- [x] User detail page (new design): profile, plan and subscription fields (status, platform, product, start/expiry), devices (count and platform of `fcmTokens`), joined date
+- [x] User detail page (new design): profile, plan and subscription fields (status, platform, product, start/expiry), devices (count and platform of `fcmTokens`), joined date. Country, city and phone are not shown (decided 2026-10-30: not needed).
 - [x] Subscription history and watch history on the detail page (`src/features/users/UserActivity.tsx`, added 2026-10-30, needs backend commit `c88caee`)
 - [x] Actions on detail: change plan/status (allowlisted `PUT` fields only) and delete (typed confirmation)
 - [x] Grant premium for a period (1/3/6 months, 1/2 years, end of year, custom date, or no end date), extend or revoke it (`src/lib/grants.ts`, added 2026-10-26). A grant sets `plan: "premium"`, `subscriptionStatus: "active"`, `subscriptionPlatform: "none"`, `subscriptionProductId: "admin_grant"` and the dates. The app's `PremiumService` and the backend's `isPremium` honour the expiry date, and the backend's daily expiry job sets the user back to free. Grants are blocked for users with a live App Store / Google Play subscription (the next renewal webhook would overwrite them). No audit trail of who granted what: that needs a backend change.
@@ -271,10 +273,8 @@ src/
 - [x] Edit: a single Name field, plus avatar upload (Email shown read-only)
 - [x] Change Password page (new design, same form style), using `/auth/change-password`
 
-### Phase 5: Announcements (new design)
-- [x] List with type badge, active toggle, priority and visibility window
-- [x] Create/edit form with the field limits above and an http(s) check on `actionUrl`; delete with confirm
-- [x] Add "Announcements" to the sidebar
+### Phase 5: Announcements
+**Removed (decided 2026-10-30):** the user decided the dashboard doesn't need this page. It was built, then deleted along with its route, API hooks, types, sidebar item and the `Switch`, `Textarea` and `CharCount` UI pieces that only it used. Git history has the code if it's wanted back. The backend API and the mobile app's Home section are unchanged.
 
 ### Phase 6: Subscription (`158:699`, `158:780`)
 **Decided: option 1 (built).** The backend has no plans to manage. Options considered:

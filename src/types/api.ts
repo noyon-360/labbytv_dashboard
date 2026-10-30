@@ -85,35 +85,6 @@ export type SubscriptionHistoryItem = {
   createdAt: string;
 };
 
-export type AnnouncementType = "update" | "feature" | "maintenance" | "important" | "info";
-
-export type Announcement = {
-  _id: string;
-  title: string;
-  message: string;
-  type: AnnouncementType;
-  actionLabel?: string;
-  actionUrl?: string;
-  priority: number;
-  isActive: boolean;
-  startsAt?: string | null;
-  endsAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type AnnouncementInput = {
-  title: string;
-  message: string;
-  type: AnnouncementType;
-  actionLabel: string;
-  actionUrl: string;
-  priority: number;
-  isActive: boolean;
-  startsAt: string | null;
-  endsAt: string | null;
-};
-
 export type LoginResult = {
   accessToken: string;
   refreshToken: string;

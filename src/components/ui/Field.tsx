@@ -98,32 +98,6 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputProps, "type
   },
 );
 
-type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-  label?: string;
-  error?: string;
-  hint?: React.ReactNode;
-};
-
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { label, error, hint, id, className, ...props },
-  ref,
-) {
-  const autoId = useId();
-  const inputId = id ?? autoId;
-  return (
-    <FieldShell label={label} htmlFor={inputId} error={error} hint={hint}>
-      <textarea
-        ref={ref}
-        id={inputId}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error || hint ? `${inputId}-msg` : undefined}
-        className={cn(control, "min-h-[120px] resize-y py-2.5 leading-normal", borderFor(error), className)}
-        {...props}
-      />
-    </FieldShell>
-  );
-});
-
 type SelectProps = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size"> & {
   label?: string;
   error?: string;
@@ -165,13 +139,3 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
     </FieldShell>
   );
 });
-
-/** Small "18 / 120" counter under a field. */
-export function CharCount({ value, max }: { value?: string; max: number }) {
-  const length = value?.length ?? 0;
-  return (
-    <span className={cn("tabular-nums", length > max && "text-danger-fg")}>
-      {length} / {max}
-    </span>
-  );
-}

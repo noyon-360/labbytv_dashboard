@@ -5,10 +5,8 @@ import { useState } from "react";
 import {
   ArrowLeft,
   Calendar,
-  CircleUser,
   Crown,
   Mail,
-  Phone,
   Smartphone,
   SquarePen,
   Trash2,
@@ -93,7 +91,6 @@ export function UserDetailPage() {
 
   const name = displayName(user);
   const isSelf = me?._id === user._id;
-  const location = [user.country, user.city].filter(Boolean).join(", ");
   const storeSub = hasStoreSubscription(user);
   const liveGrant = hasLiveGrant(user, now);
 
@@ -132,8 +129,6 @@ export function UserDetailPage() {
           <hr className="my-6 border-line" />
           <ul className="space-y-5">
             <IconDetail icon={<Calendar />} label="Joined" value={formatDate(user.createdAt)} />
-            <IconDetail icon={<CircleUser />} label="Country / City" value={location || "—"} />
-            <IconDetail icon={<Phone />} label="Phone" value={user.phone || "—"} />
             <IconDetail icon={<Mail />} label="Email" value={user.email} />
             <IconDetail icon={<Smartphone />} label="Devices" value={describeDevices(user)} />
           </ul>
