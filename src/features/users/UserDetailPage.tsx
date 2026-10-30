@@ -2,7 +2,19 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, Calendar, CircleUser, Inbox, Mail, Phone, Smartphone, SquarePen, Trash2, TriangleAlert } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  CircleUser,
+  Crown,
+  Inbox,
+  Mail,
+  Phone,
+  Smartphone,
+  SquarePen,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { getErrorStatus } from "@/api/client";
 import { useProfile } from "@/api/profile";
 import { useUser } from "@/api/users";
@@ -21,14 +33,16 @@ import {
   relativeDays,
   STATUS_LABEL,
 } from "@/lib/format";
-import { DeleteUserDialog, EditPlanDialog } from "./UserDialogs";
+import { hasLiveGrant, hasStoreSubscription, isAdminGrant } from "@/lib/grants";
+import { DeleteUserDialog, EditPlanDialog, GrantPremiumDialog, RevokePremiumDialog } from "./UserDialogs";
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: user, isPending, isError, error, refetch } = useUser(id);
   const { data: me } = useProfile();
-  const [dialog, setDialog] = useState<"plan" | "delete" | null>(null);
+  const [dialog, setDialog] = useState<"plan" | "grant" | "revoke" | "delete" | null>(null);
+  const [now] = useState(() => new Date());
 
   const crumbs = [
     { label: "Dashboard", href: "/dashboard" },
@@ -80,6 +94,8 @@ export function UserDetailPage() {
   const name = displayName(user);
   const isSelf = me?._id === user._id;
   const location = [user.country, user.city].filter(Boolean).join(", ");
+  const storeSub = hasStoreSubscription(user);
+  const liveGrant = hasLiveGrant(user, now);
 
   return (
     <>
@@ -127,9 +143,25 @@ export function UserDetailPage() {
           <Card>
             <CardTitle
               action={
-                <Button variant="secondary" size="sm" icon={<SquarePen className="size-4" />} onClick={() => setDialog("plan")}>
-                  Edit Plan
-                </Button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {liveGrant && (
+                    <Button variant="ghost" size="sm" onClick={() => setDialog("revoke")}>
+                      Revoke
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    icon={<Crown className="size-4" />}
+                    onClick={() => setDialog("grant")}
+                    disabled={storeSub}
+                    title={storeSub ? "This user pays through the store. A grant would be overwritten at the next renewal." : undefined}
+                  >
+                    {liveGrant ? "Extend Premium" : "Grant Premium"}
+                  </Button>
+                  <Button variant="secondary" size="sm" icon={<SquarePen className="size-4" />} onClick={() => setDialog("plan")}>
+                    Edit Plan
+                  </Button>
+                </div>
               }
             >
               Subscription
@@ -137,13 +169,15 @@ export function UserDetailPage() {
             <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 xl:grid-cols-3">
               <Detail label="Plan">{PLAN_LABEL[user.plan] ?? user.plan}</Detail>
               <Detail label="Status">{STATUS_LABEL[user.subscriptionStatus] ?? user.subscriptionStatus}</Detail>
-              <Detail label="Platform">{PLATFORM_LABEL[user.subscriptionPlatform] ?? user.subscriptionPlatform}</Detail>
+              <Detail label="Platform">
+                {isAdminGrant(user) ? "Admin grant" : (PLATFORM_LABEL[user.subscriptionPlatform] ?? user.subscriptionPlatform)}
+              </Detail>
               <Detail label="Product ID">
                 <span className="break-all">{user.subscriptionProductId || "—"}</span>
               </Detail>
               <Detail label="Started">{formatDate(user.subscriptionStartDate)}</Detail>
               <Detail label="Expires">
-                {formatDate(user.subscriptionExpiresAt)}
+                {liveGrant && !user.subscriptionExpiresAt ? "No end date" : formatDate(user.subscriptionExpiresAt)}
                 {user.subscriptionExpiresAt && <span className="text-muted"> ({relativeDays(user.subscriptionExpiresAt)})</span>}
               </Detail>
             </dl>
@@ -178,6 +212,8 @@ export function UserDetailPage() {
       )}
 
       <EditPlanDialog user={user} open={dialog === "plan"} onClose={() => setDialog(null)} />
+      <GrantPremiumDialog user={user} open={dialog === "grant"} onClose={() => setDialog(null)} />
+      <RevokePremiumDialog user={user} open={dialog === "revoke"} onClose={() => setDialog(null)} />
       <DeleteUserDialog
         user={user}
         open={dialog === "delete"}

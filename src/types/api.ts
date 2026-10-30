@@ -36,7 +36,17 @@ export type User = {
 };
 
 /** The only fields the dashboard ever sends to PUT /admin/user/:id. */
-export type UserUpdate = Partial<Pick<User, "plan" | "subscriptionStatus">>;
+export type UserUpdate = Partial<
+  Pick<
+    User,
+    | "plan"
+    | "subscriptionStatus"
+    | "subscriptionPlatform"
+    | "subscriptionProductId"
+    | "subscriptionStartDate"
+    | "subscriptionExpiresAt"
+  >
+>;
 
 export type AnnouncementType = "update" | "feature" | "maintenance" | "important" | "info";
 

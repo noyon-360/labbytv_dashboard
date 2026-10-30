@@ -12,6 +12,7 @@ import { PageHeader } from "@/layout/PageHeader";
 import { buttonClasses } from "@/components/ui/Button";
 import { REVENUECAT_URL } from "@/lib/env";
 import { formatNumber, formatPercent, PLATFORM_LABEL } from "@/lib/format";
+import { ADMIN_GRANT_PRODUCT } from "@/lib/grants";
 import { hasLiveSubscription, platformSplit, productBreakdown } from "@/lib/stats";
 
 export function SubscriptionPage() {
@@ -106,7 +107,11 @@ export function SubscriptionPage() {
                       <Td className="whitespace-nowrap text-fg-2">
                         <span className="inline-flex items-center gap-2">
                           <Smartphone className="size-4" aria-hidden />
-                          {p.platform === "none" ? "Unknown" : PLATFORM_LABEL[p.platform]}
+                          {p.productId === ADMIN_GRANT_PRODUCT
+                            ? "Admin grant"
+                            : p.platform === "none"
+                              ? "Unknown"
+                              : PLATFORM_LABEL[p.platform]}
                         </span>
                       </Td>
                       <Td>

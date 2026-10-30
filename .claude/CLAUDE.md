@@ -256,6 +256,7 @@ src/
 - [x] Table with Name, Mail, Added date, Plan and View. Use client-side search (name/email), plan filter, sort by date and pagination (25 per page).
 - [x] User detail page (new design): profile, plan and subscription fields (status, platform, product, start/expiry), devices (count and platform of `fcmTokens`), joined date
 - [x] Actions on detail: change plan/status (allowlisted `PUT` fields only) and delete (typed confirmation)
+- [x] Grant premium for a period (1/3/6 months, 1/2 years, end of year, custom date, or no end date), extend or revoke it (`src/lib/grants.ts`, added 2026-10-26). A grant sets `plan: "premium"`, `subscriptionStatus: "active"`, `subscriptionPlatform: "none"`, `subscriptionProductId: "admin_grant"` and the dates. The app's `PremiumService` and the backend's `isPremium` honour the expiry date, and the backend's daily expiry job sets the user back to free. Grants are blocked for users with a live App Store / Google Play subscription (the next renewal webhook would overwrite them). No audit trail of who granted what: that needs a backend change.
 
 ### Phase 3: Dashboard (`158:1078`)
 - [x] Total User card: total count. The delta compares sign-ups in the last 30 days against the 30 days before.

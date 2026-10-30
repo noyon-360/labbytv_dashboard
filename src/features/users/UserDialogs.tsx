@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Trash2, TriangleAlert } from "lucide-react";
+import { Crown, Save, Trash2, TriangleAlert } from "lucide-react";
 import { getErrorMessage } from "@/api/client";
 import { useDeleteUser, useUpdateUser } from "@/api/users";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +9,17 @@ import { Input, Select } from "@/components/ui/Field";
 import { DangerIcon, Modal } from "@/components/ui/Modal";
 import { Alert } from "@/components/ui/States";
 import { useToast } from "@/components/ui/Toast";
-import { displayName, PLAN_LABEL, STATUS_LABEL } from "@/lib/format";
+import { displayName, formatDate, formatDateTime, PLAN_LABEL, STATUS_LABEL } from "@/lib/format";
+import {
+  GRANT_OPTIONS,
+  grantEnd,
+  grantUpdate,
+  hasLiveGrant,
+  isMonthBased,
+  revokeUpdate,
+  toDateInput,
+  type GrantDuration,
+} from "@/lib/grants";
 import type { Plan, SubscriptionStatus, User } from "@/types/api";
 
 const PLAN_OPTIONS = (Object.keys(PLAN_LABEL) as Plan[]).map((value) => ({ value, label: PLAN_LABEL[value] }));
@@ -136,5 +146,165 @@ function DeleteUserForm({ user, onClose, onDeleted }: { user: User; onClose: () 
         </Button>
       </div>
     </form>
+  );
+}
+
+export function GrantPremiumDialog({ user, open, onClose }: { user: User; open: boolean; onClose: () => void }) {
+  return (
+    <Modal open={open} onClose={onClose} title="Grant premium">
+      {open && <GrantPremiumForm user={user} onClose={onClose} />}
+    </Modal>
+  );
+}
+
+function GrantPremiumForm({ user, onClose }: { user: User; onClose: () => void }) {
+  const toast = useToast();
+  const update = useUpdateUser(user._id);
+  // Fixed while the dialog is open so the preview doesn't move; save uses a fresh time.
+  const [openedAt] = useState(() => new Date());
+  const [duration, setDuration] = useState<GrantDuration>("1y");
+  const [customDate, setCustomDate] = useState("");
+  const currentEnd = hasLiveGrant(user, openedAt) && user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null;
+  const [extend, setExtend] = useState(true);
+  const extending = Boolean(currentEnd) && extend && isMonthBased(duration);
+
+  const endFrom = (now: Date) => grantEnd(duration, extending && currentEnd ? currentEnd : now, now, customDate);
+  const end = endFrom(openedAt);
+  const customError =
+    duration !== "custom"
+      ? undefined
+      : !customDate
+        ? "Choose a date"
+        : end && end <= openedAt
+          ? "Choose a date in the future"
+          : undefined;
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customError) return;
+    const now = new Date();
+    const finalEnd = endFrom(now);
+    // Keep the original start date when extending a grant.
+    const start = extending && user.subscriptionStartDate ? new Date(user.subscriptionStartDate) : now;
+    try {
+      await update.mutateAsync(grantUpdate(start, finalEnd));
+      toast.success(finalEnd ? `Premium until ${formatDate(finalEnd)}` : "Premium with no end date");
+      onClose();
+    } catch {
+      // shown inline below
+    }
+  };
+
+  return (
+    <form onSubmit={save} className="flex flex-col gap-5">
+      <p className="text-base leading-relaxed text-fg-2">
+        Give <span className="font-medium text-fg">{displayName(user)}</span> premium access without a store purchase.
+      </p>
+      <Select
+        label="Duration"
+        value={duration}
+        onChange={(e) => setDuration(e.target.value as GrantDuration)}
+        options={GRANT_OPTIONS}
+        data-autofocus
+      />
+      {duration === "custom" && (
+        <Input
+          label="Premium until (end of this day)"
+          type="date"
+          min={toDateInput(openedAt)}
+          value={customDate}
+          onChange={(e) => setCustomDate(e.target.value)}
+          error={customDate ? customError : undefined}
+        />
+      )}
+      {currentEnd && isMonthBased(duration) && (
+        <label className="flex cursor-pointer items-start gap-3 text-base text-fg-2">
+          <input
+            type="checkbox"
+            checked={extend}
+            onChange={(e) => setExtend(e.target.checked)}
+            className="mt-0.5 size-4 accent-brand"
+          />
+          <span>Add to their current grant, which ends {formatDate(currentEnd)}</span>
+        </label>
+      )}
+      <div className="rounded-lg bg-field px-4 py-3">
+        <p className="text-xs text-subtle">Premium until</p>
+        <p className="mt-1 text-lg font-medium">
+          {duration === "forever" ? "No end date" : end && !customError ? formatDateTime(end) : "—"}
+        </p>
+      </div>
+      <Alert tone="info">
+        {duration === "forever"
+          ? "Access lasts until an admin revokes it."
+          : "Access ends at this time and the user goes back to Free. The app sends its usual reminder 3 days before."}
+      </Alert>
+      {update.isError && <Alert tone="danger">{getErrorMessage(update.error)}</Alert>}
+      <div className="mt-2 flex justify-end gap-3">
+        <Button variant="secondary" size="sm" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          size="sm"
+          loading={update.isPending}
+          disabled={Boolean(customError)}
+          icon={<Crown className="size-4" />}
+        >
+          Grant Premium
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export function RevokePremiumDialog({ user, open, onClose }: { user: User; open: boolean; onClose: () => void }) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Revoke premium?"
+      hideClose
+      icon={
+        <DangerIcon>
+          <TriangleAlert className="size-6" />
+        </DangerIcon>
+      }
+    >
+      {open && <RevokePremiumForm user={user} onClose={onClose} />}
+    </Modal>
+  );
+}
+
+function RevokePremiumForm({ user, onClose }: { user: User; onClose: () => void }) {
+  const toast = useToast();
+  const update = useUpdateUser(user._id);
+
+  const revoke = async () => {
+    try {
+      await update.mutateAsync(revokeUpdate(new Date()));
+      toast.success("Premium revoked");
+      onClose();
+    } catch {
+      // shown inline below
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="text-base leading-relaxed text-fg-2">
+        <span className="font-medium text-fg">{displayName(user)}</span> goes back to the Free plan right away
+        {user.subscriptionExpiresAt ? `, instead of on ${formatDate(user.subscriptionExpiresAt)}` : ""}.
+      </p>
+      {update.isError && <Alert tone="danger">{getErrorMessage(update.error)}</Alert>}
+      <div className="mt-2 flex justify-end gap-3">
+        <Button variant="secondary" size="sm" onClick={onClose} data-autofocus>
+          Cancel
+        </Button>
+        <Button variant="danger" size="sm" loading={update.isPending} onClick={revoke}>
+          Revoke Premium
+        </Button>
+      </div>
+    </div>
   );
 }

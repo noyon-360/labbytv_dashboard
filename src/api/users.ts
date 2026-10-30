@@ -29,7 +29,14 @@ export function useUser(id: string) {
 
 // PUT /admin/user/:id writes the body straight to the document, so only ever send
 // this allowlist. Never send `password`: it would be stored unhashed.
-const EDITABLE: (keyof UserUpdate)[] = ["plan", "subscriptionStatus"];
+const EDITABLE: (keyof UserUpdate)[] = [
+  "plan",
+  "subscriptionStatus",
+  "subscriptionPlatform",
+  "subscriptionProductId",
+  "subscriptionStartDate",
+  "subscriptionExpiresAt",
+];
 
 export function useUpdateUser(id: string) {
   const queryClient = useQueryClient();
